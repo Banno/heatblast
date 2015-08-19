@@ -3,51 +3,68 @@ package com.banno.heatblast
 import org.apache.mesos.{Scheduler, SchedulerDriver}
 import org.apache.mesos.Protos._
 import java.util.{List => JavaList}
-import org.slf4j.LoggerFactory
 import scala.collection.JavaConverters._
+import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 
-abstract class SamzaMesosScheduler extends Scheduler with SamzaJobStatePersistence {
+trait SamzaMesosScheduler extends Scheduler with SamzaJobStatePersistence with Logging {
 
-  private[this] lazy val log = LoggerFactory.getLogger(this.getClass)
+  private[this] val infosToCompute: BlockingQueue[RunSamzaJob] = new LinkedBlockingQueue(1000)
+  def computeJobInfo(command: RunSamzaJob): Boolean = infosToCompute.offer(command) //TODO this command queue needs to be part of scheduler's persistent state
 
-  def registered(driver: SchedulerDriver, frameworkId: FrameworkID, masterInfo: MasterInfo): Unit = {
+  def getOfferForComputingJobInfo(command: RunSamzaJob, offers: Seq[Offer]): Option[Offer] = ???
+
+  def useOffersForComputingJobInfo(offers: Seq[Offer]): Seq[Offer] = {
+    if (!infosToCompute.isEmpty) {
+      val command = infosToCompute.peek
+      getOfferForComputingJobInfo(command, offers) match {
+        case Some(offer) => ???
+        case None => ???
+      }
+    } else {
+      offers
+    }
+  }
+
+  override def registered(driver: SchedulerDriver, frameworkId: FrameworkID, masterInfo: MasterInfo): Unit = {
     log.info(s"Registered frameworkdId $frameworkId")
   }
 
-  def reregistered(driver: SchedulerDriver, masterInfo: MasterInfo): Unit = {
+  override def reregistered(driver: SchedulerDriver, masterInfo: MasterInfo): Unit = {
     log.info(s"Reregistered masterInfo $masterInfo")
   }
 
-  def resourceOffers(driver: SchedulerDriver, joffers: JavaList[Offer]): Unit = {
+  override def resourceOffers(driver: SchedulerDriver, joffers: JavaList[Offer]): Unit = {
     val offers = joffers.asScala
     log.info(s"Received offers: $offers")
+    val unusedOffers = useOffersForComputingJobInfo(offers)
+    unusedOffers.foreach(o => driver.declineOffer(o.getId))
   }
 
-  def offerRescinded(driver: SchedulerDriver, offerId: OfferID): Unit = {
+  override def offerRescinded(driver: SchedulerDriver, offerId: OfferID): Unit = {
     log.info(s"Offer rescinded $offerId")
   }
 
-  def statusUpdate(driver: SchedulerDriver, status: TaskStatus): Unit = {
+  override def statusUpdate(driver: SchedulerDriver, status: TaskStatus): Unit = {
     log.info(s"Status update $status")
   }
 
-  def frameworkMessage(driver: SchedulerDriver, executorId: ExecutorID, slaveId: SlaveID, data: Array[Byte]): Unit = {
+  override def frameworkMessage(driver: SchedulerDriver, executorId: ExecutorID, slaveId: SlaveID, data: Array[Byte]): Unit = {
     log.info("Framework message")
   }
 
-  def disconnected(driver: SchedulerDriver): Unit = {
+  override def disconnected(driver: SchedulerDriver): Unit = {
     log.info("Disconnected")
   }
 
-  def slaveLost(driver: SchedulerDriver, slaveId: SlaveID): Unit = {
+  override def slaveLost(driver: SchedulerDriver, slaveId: SlaveID): Unit = {
     log.info(s"Slave lost $slaveId")
   }
 
-  def executorLost(driver: SchedulerDriver, executorId: ExecutorID, slaveId: SlaveID, status: Int): Unit = {
+  override def executorLost(driver: SchedulerDriver, executorId: ExecutorID, slaveId: SlaveID, status: Int): Unit = {
     log.info(s"Executor lost $executorId")
   }
 
-  def error(driver: SchedulerDriver, message: String): Unit = {
+  override def error(driver: SchedulerDriver, message: String): Unit = {
     log.info(s"Error $message")
   }
 }
