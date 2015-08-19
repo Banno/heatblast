@@ -9,9 +9,11 @@ import spray.json.DefaultJsonProtocol
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 
 case class RunSamzaJob(jobName: String, dockerImage: String)
+case class SamzaJobConfig(jobName: String, samzaConfig: Map[String, String])
 
 object HeatblastProtocol extends DefaultJsonProtocol {
   implicit val runSamzaJobFormat = jsonFormat2(RunSamzaJob)
+  implicit val samzaJobConfigFormat = jsonFormat2(SamzaJobConfig)
 }
 
 trait HttpServer extends SprayJsonSupport with Logging {
@@ -32,20 +34,23 @@ trait HttpServer extends SprayJsonSupport with Logging {
           "Say hello to Heatblast"
         }
       }
-    } ~ 
+    } ~
     path("jobs") {
       get { complete { "TODO provide a list of all jobs" } } ~
       post {
-        entity(as[RunSamzaJob]) { command => 
+        entity(as[RunSamzaJob]) { command =>
           log.info(command.toString)
           samzaScheduler.computeJobInfo(command)
           //get computed job info from zookeeper
           //run samza container mesos tasks
           complete { "TODO run the samza job..." }
+        } ~
+        entity(as[SamzaJobConfig]) { config =>
+          log.info(s"Received config for job: $config")
         }
       }
     }
- 
+
   def startHttpServer() = {
     lazy val host = config.getString("heatblast-scheduler.http-server.host")
     lazy val port = config.getInt("heatblast-scheduler.http-server.port")

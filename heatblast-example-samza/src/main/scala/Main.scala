@@ -1,20 +1,16 @@
 package com.banno.heatblast.example
 
-import com.banno.heatblast.{MesosTaskUtility, ZookeeperSamzaJobStatePersistence}
-import com.typesafe.config.ConfigFactory
+import com.banno.heatblast.MesosTaskUtility
 
-object Main extends App
-    with MesosTaskUtility with ZookeeperSamzaJobStatePersistence {
-
-  val config = ConfigFactory.load()
+object Main extends App {
 
   if (askedToGetMesosSchedulerConfigs) {
     val jobName = getJobName()
     SamzaConfigUtility.getSamzaConfig(jobName).foreach { config =>
-      generateConfigForMesosScheduler(jobName, config)
+      MesosTaskUtility.submitSamzaConfigToMesosScheduler(jobName, config)
     }
   } else if (askedToRunSamzaContainer) {
-    runSamzaContainer()
+    MesosTaskUtility.runSamzaContainer()
   } else {
     println(s"Whoops, invalid command! Args supplied: ${args.toList}")
   }
