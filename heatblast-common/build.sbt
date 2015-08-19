@@ -9,6 +9,6 @@ libraryDependencies ++= {
     "org.apache.samza" % "samza-api" % samzaVersion,
     "org.apache.samza" %% "samza-core" % samzaVersion,
     "org.apache.mesos" % "mesos" % mesosVersion,
-    "com.typesafe" % "config" % "1.3.0"
+    "com.typesafe" % "config" % "1.2.1"
   )
 }
