@@ -5,9 +5,11 @@ import org.apache.mesos.Protos.FrameworkInfo
 import com.typesafe.config.ConfigFactory
 import org.slf4j.LoggerFactory
 
-object Main extends App { self =>
+trait Logging {
+  lazy val log = LoggerFactory.getLogger(this.getClass)
+}
 
-  val log = LoggerFactory.getLogger(this.getClass)
+object Main extends App with HttpServer with Logging { self =>
   val config = ConfigFactory.load()
 
   val frameworkInfo = FrameworkInfo.newBuilder().setUser("").setName("samza-scheduler").build()
@@ -20,6 +22,8 @@ object Main extends App { self =>
 
   val driver = new MesosSchedulerDriver(samzaScheduler, frameworkInfo, mesosConnect)
   log.info(s"Running samza mesos scheduler on $mesosConnect")
+
+  startHttpServer()
 
   val exitCode = driver.run()
   log.info(s"Scheduler finished with exit code $exitCode")
