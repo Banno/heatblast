@@ -1,0 +1,18 @@
+{
+  "id": "heatblast-scheduler",
+  "container": {
+    "docker": {
+      "image": "registry.banno-internal.com/heatblast-scheduler:latest"
+    },
+    "type": "DOCKER"
+  },
+  "cpus": 0.1,
+  "mem": 100,
+  "instances": 1,
+  "upgradeStrategy": {
+    "minimumHealthCapacity": 0
+  },
+  "env": {
+    "JAVA_OPTS": "-Xms64M -Xmx64M -Djava.library.path=/usr/local/lib"
+  }
+}
