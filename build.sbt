@@ -1,15 +1,9 @@
 import com.banno._
 
-name := "heatblast"
+lazy val root = bannoRootProject("heatblast").aggregate(common, lib, scheduler)
 
-BannoSettings.settings
+lazy val common = bannoProject("heatblast-common", "heatblast-common", file("./heatblast-common"))
 
-libraryDependencies ++= {
-  val samzaVersion = "0.8.0"
-  val mesosVersion = "0.22.1"
-  Seq(
-    "org.apache.samza" % "samza-api" % samzaVersion,
-    "org.apache.samza" %% "samza-core" % samzaVersion,
-    "org.apache.mesos" % "mesos" % mesosVersion
-  )
-}
+lazy val lib = bannoProject("heatblast-lib", "heatblast-lib", file("./heatblast-lib")).dependsOn(common)
+
+lazy val scheduler = bannoProject("heatblast-scheduler", "heatblast-scheduler", file("./heatblast-scheduler")).dependsOn(common)
