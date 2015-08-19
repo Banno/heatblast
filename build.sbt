@@ -4,6 +4,8 @@ name := "heatblast"
 
 BannoSettings.settings
 
+Docker.settings
+
 libraryDependencies ++= {
   val samzaVersion = "0.8.0"
   val mesosVersion = "0.22.1"
