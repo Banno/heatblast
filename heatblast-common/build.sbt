@@ -12,3 +12,5 @@ libraryDependencies ++= {
     "com.typesafe" % "config" % "1.2.1"
   )
 }
+
+libraryDependencies += "com.typesafe.akka" %% "akka-http-spray-json-experimental" % "1.0"

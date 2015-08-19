@@ -5,16 +5,7 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Directives._
-import spray.json.DefaultJsonProtocol
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-
-case class RunSamzaJob(jobName: String, dockerImage: String)
-case class SamzaJobConfig(jobName: String, samzaConfig: Map[String, String])
-
-object HeatblastProtocol extends DefaultJsonProtocol {
-  implicit val runSamzaJobFormat = jsonFormat2(RunSamzaJob)
-  implicit val samzaJobConfigFormat = jsonFormat2(SamzaJobConfig)
-}
 
 trait HttpServer extends SprayJsonSupport with Logging {
   def config: Config
@@ -47,6 +38,7 @@ trait HttpServer extends SprayJsonSupport with Logging {
         } ~
         entity(as[SamzaJobConfig]) { config =>
           log.info(s"Received config for job: $config")
+          complete { "todo run samza container" }
         }
       }
     }

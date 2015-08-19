@@ -6,8 +6,8 @@ object Main extends App {
 
   if (askedToGetMesosSchedulerConfigs) {
     val jobName = getJobName()
-    SamzaConfigUtility.getSamzaConfig(jobName).foreach { config =>
-      MesosTaskUtility.submitSamzaConfigToMesosScheduler(jobName, config)
+    SamzaConfigUtility.getSamzaConfig(jobName).foreach { configMap =>
+      MesosTaskUtility.submitSamzaConfigToMesosScheduler(jobName, configMap)
     }
   } else if (askedToRunSamzaContainer) {
     MesosTaskUtility.runSamzaContainer()

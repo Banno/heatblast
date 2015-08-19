@@ -4,8 +4,8 @@ import org.apache.samza.config.Config
 
 object SamzaConfigUtility {
 
-  def getSamzaConfig(jobName: String): Option[Config] = samzaConfigsByJobName.get(jobName)
+  def getSamzaConfig(jobName: String): Option[Map[String, String]] = samzaConfigsByJobName.get(jobName)
 
-  private[this] lazy val samzaConfigsByJobName: Map[String, Config] =
-    Map(ExampleSamzaTaskConfig.samzaJobName -> ExampleSamzaTaskConfig.samzaConfig)
+  private[this] lazy val samzaConfigsByJobName: Map[String, Map[String, String]] =
+    Map(ExampleSamzaTaskConfig.samzaJobName -> ExampleSamzaTaskConfig.map)
 }
