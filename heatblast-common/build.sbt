@@ -8,6 +8,7 @@ libraryDependencies ++= {
   Seq(
     "org.apache.samza" % "samza-api" % samzaVersion,
     "org.apache.samza" %% "samza-core" % samzaVersion,
-    "org.apache.mesos" % "mesos" % mesosVersion
+    "org.apache.mesos" % "mesos" % mesosVersion,
+    "com.typesafe" % "config" % "1.3.0"
   )
 }

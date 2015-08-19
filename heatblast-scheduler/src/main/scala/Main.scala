@@ -1,5 +1,21 @@
 package com.banno.heatblast
 
-object Main extends App {
+import org.apache.mesos.MesosSchedulerDriver
+import org.apache.mesos.Protos.FrameworkInfo
+import com.typesafe.config.ConfigFactory
+import org.slf4j.LoggerFactory
 
+object Main extends App {
+  val log = LoggerFactory.getLogger(this.getClass)
+  val config = ConfigFactory.load()
+
+  val frameworkInfo = FrameworkInfo.newBuilder().setUser("").setName("samza-scheduler").build()
+  val samzaScheduler = new SamzaMesosScheduler {} // todo -- mix in zk state
+  val mesosConnect = config.getString("mesos.master.connect")
+
+  val driver = new MesosSchedulerDriver(samzaScheduler, frameworkInfo, mesosConnect)
+  log.info(s"Running samza mesos scheduler on $mesosConnect")
+
+  val exitCode = driver.run()
+  log.info(s"Scheduler finished with exit code $exitCode")
 }

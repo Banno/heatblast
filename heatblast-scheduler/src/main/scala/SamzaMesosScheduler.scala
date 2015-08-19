@@ -3,26 +3,51 @@ package com.banno.heatblast
 import org.apache.mesos.{Scheduler, SchedulerDriver}
 import org.apache.mesos.Protos._
 import java.util.{List => JavaList}
+import org.slf4j.LoggerFactory
+import scala.collection.JavaConverters._
 
-class SamzaMesosScheduler extends Scheduler with SamzaJobStatePersistence {
+abstract class SamzaMesosScheduler extends Scheduler with SamzaJobStatePersistence {
 
-  def registered(driver: SchedulerDriver, frameworkId: FrameworkID, masterInfo: MasterInfo): Unit = {}
+  private[this] lazy val log = LoggerFactory.getLogger(this.getClass)
 
-  def reregistered(driver: SchedulerDriver, masterInfo: MasterInfo): Unit = {}
+  def registered(driver: SchedulerDriver, frameworkId: FrameworkID, masterInfo: MasterInfo): Unit = {
+    log.info(s"Registered frameworkdId $frameworkId")
+  }
 
-  def resourceOffers(driver: SchedulerDriver, offers: JavaList[Offer]): Unit = {}
+  def reregistered(driver: SchedulerDriver, masterInfo: MasterInfo): Unit = {
+    log.info(s"Reregistered masterInfo $masterInfo")
+  }
 
-  def offerRescinded(driver: SchedulerDriver, offerId: OfferID): Unit = {}
+  def resourceOffers(driver: SchedulerDriver, joffers: JavaList[Offer]): Unit = {
+    val offers = joffers.asScala
+    log.info(s"Received offers: $offers")
+  }
 
-  def statusUpdate(driver: SchedulerDriver, status: TaskStatus): Unit = {}
+  def offerRescinded(driver: SchedulerDriver, offerId: OfferID): Unit = {
+    log.info(s"Offer rescinded $offerId")
+  }
 
-  def frameworkMessage(driver: SchedulerDriver, executorId: ExecutorID, slaveId: SlaveID, data: Array[Byte]): Unit = {}
+  def statusUpdate(driver: SchedulerDriver, status: TaskStatus): Unit = {
+    log.info(s"Status update $status")
+  }
 
-  def disconnected(driver: SchedulerDriver): Unit = {}
+  def frameworkMessage(driver: SchedulerDriver, executorId: ExecutorID, slaveId: SlaveID, data: Array[Byte]): Unit = {
+    log.info("Framework message")
+  }
 
-  def slaveLost(driver: SchedulerDriver, slaveId: SlaveID): Unit = {}
+  def disconnected(driver: SchedulerDriver): Unit = {
+    log.info("Disconnected")
+  }
 
-  def executorLost(driver: SchedulerDriver, executorId: ExecutorID, slaveId: SlaveID, status: Int): Unit = {}
+  def slaveLost(driver: SchedulerDriver, slaveId: SlaveID): Unit = {
+    log.info(s"Slave lost $slaveId")
+  }
 
-  def error(driver: SchedulerDriver, message: String): Unit = {}
+  def executorLost(driver: SchedulerDriver, executorId: ExecutorID, slaveId: SlaveID, status: Int): Unit = {
+    log.info(s"Executor lost $executorId")
+  }
+
+  def error(driver: SchedulerDriver, message: String): Unit = {
+    log.info(s"Error $message")
+  }
 }
