@@ -7,13 +7,16 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, 
 import scala.concurrent.Future
 import org.slf4j.LoggerFactory
 
-// todo -- helpful methods for storing & retrieving running samza jobs
+// todo -- helpful methods for storing & retrieving running samza jobs on re-registration
 
 trait SamzaJobStatePersistence {
-
+  // def setSamzaJobInfo(jobName: String, ): Unit
+  // def watchForJobInfoUpdate(jobName: String)(f: Config => Unit): Unit
 }
 
 trait ZookeeperSamzaJobStatePersistence extends SamzaJobStatePersistence {
+
+  // def setSamzaJobInfo(jobName: String, jobInfo: M)
 
   def config: Config
 
