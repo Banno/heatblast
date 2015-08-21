@@ -38,7 +38,7 @@ trait SamzaMesosScheduler extends Scheduler with SamzaJobStatePersistence with L
 
     def envVar(name: String, value: String) = Environment.Variable.newBuilder().setName(name).setValue(value).build()
     val environment = Environment.newBuilder()
-      .addVariables(envVar("HEATBLAST_HOST", httpServerHost))
+      .addVariables(envVar("HEATBLAST_HOST", publicHttpServerHost))
       .addVariables(envVar("HEATBLAST_PORT", httpServerPort.toString))
       .build()
 
