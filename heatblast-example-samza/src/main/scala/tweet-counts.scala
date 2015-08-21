@@ -7,9 +7,12 @@ import org.apache.samza.config.Config
 import spray.json._
 import org.slf4j.LoggerFactory
 
-case class Tweet(screen_name: String, text: String) // other interesting fields?
+case class User(screen_name: String)
+case class Tweet(user: User, text: String) // other interesting fields?
+
 
 object TweetFormat extends DefaultJsonProtocol {
+  implicit val userFormat = jsonFormat1(User)
   implicit val tweetFormat = jsonFormat2(Tweet)
 }
 
@@ -24,14 +27,16 @@ class RepartitionTweetsByUsernameTask extends StreamTask {
   lazy val outputStream = new SystemStream("kafka", "heatblast.tweets-by-username")
 
   def process(envelope: IncomingMessageEnvelope, collector: MessageCollector, coordinator: TaskCoordinator): Unit = {
-    val msg = new String(envelope.getMessage().asInstanceOf[Array[Byte]], "UTF-8")
-    log.debug(msg)
-    val js = msg.toJson.asJsObject()
+    val msgBytes = envelope.getMessage().asInstanceOf[Array[Byte]]
+    val msg = new String(msgBytes, "UTF-8")
+    // log.debug(msg)
+    // val js = msg.toJson.asJsObject()
+    val js: JsObject = msg.parseJson.asJsObject()
 
     // just look for tweets containing "text" -- ignore other types of messages
     if (js.fields.exists(_._1 == "text")) {
       val tweet = js.convertTo[Tweet]
-      collector.send(new OutgoingMessageEnvelope(outputStream, tweet.screen_name.getBytes("UTF-8"), 1))
+      collector.send(new OutgoingMessageEnvelope(outputStream, tweet.user.screen_name.getBytes("UTF-8"), msgBytes))
     }
   }
 }
@@ -62,7 +67,7 @@ object TweetJobConfigs {
     "mesos.master.connect" -> "zk://dev.banno.com:2181/mesos",
     "mesos.executor.count" -> "1",
     "mesos.executor.cpu.cores" -> "0.1",
-    "mesos.executor.disk.mb" -> "25",
+    "mesos.executor.disk.mb" -> "550",
     "mesos.scheduler.role" -> "samza",
     "mesos.docker.entrypoint.arguments" -> "container",
 
@@ -93,7 +98,7 @@ object TweetJobConfigs {
     "mesos.master.connect" -> "zk://dev.banno.com:2181/mesos",
     "mesos.executor.count" -> "1",
     "mesos.executor.cpu.cores" -> "0.1",
-    "mesos.executor.disk.mb" -> "25",
+    "mesos.executor.disk.mb" -> "550",
     "mesos.scheduler.role" -> "samza",
     "mesos.docker.entrypoint.arguments" -> "container",
 
