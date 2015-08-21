@@ -49,6 +49,8 @@ class CountTweetsByUsernameTask extends StreamTask with InitableTask {
   lazy val storeName = "heatblast.tweet-counts-by-username"
   var store: KeyValueStore[String, Int] = null
 
+  lazy val log = LoggerFactory.getLogger(this.getClass)
+
   def init(config: Config, context: TaskContext): Unit = {
     store = context.getStore(storeName).asInstanceOf[KeyValueStore[String, Int]]
   }
