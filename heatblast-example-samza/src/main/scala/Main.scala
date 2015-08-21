@@ -9,6 +9,7 @@ object Main extends App {
     SamzaConfigUtility.getSamzaConfig(jobName).foreach { configMap =>
       MesosTaskUtility.submitSamzaConfigToMesosScheduler(jobName, configMap)
     }
+    //TODO may need so System.exit here?
   } else if (askedToRunSamzaContainer) {
     MesosTaskUtility.runSamzaContainer()
   } else {

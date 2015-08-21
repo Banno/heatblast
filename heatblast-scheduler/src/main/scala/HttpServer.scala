@@ -35,7 +35,11 @@ trait HttpServer extends SprayJsonSupport with Logging with HeatblastConfig { se
           //get computed job info from zookeeper
           //run samza container mesos tasks
           complete { "TODO run the samza job..." }
-        } ~
+        } 
+      }
+    } ~
+    path("run-job") {
+      post {
         entity(as[SamzaJobConfig]) { config =>
           log.info(s"Received config for job: $config")
           runJob(config)

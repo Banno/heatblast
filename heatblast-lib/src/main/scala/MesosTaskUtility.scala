@@ -8,6 +8,7 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.Http
 import akka.io.IO
 import com.typesafe.config.ConfigFactory
+import org.slf4j.LoggerFactory
 
 object MesosTaskUtility {
   import spray.json._
@@ -15,6 +16,8 @@ object MesosTaskUtility {
   import HeatblastProtocol._
 
   private[this] lazy val config = ConfigFactory.load()
+
+  lazy val log = LoggerFactory.getLogger(this.getClass)
 
   def runSamzaContainer() = SamzaContainer.safeMain()
 
@@ -29,7 +32,8 @@ object MesosTaskUtility {
   import system.dispatcher
 
   private[this] def sendSamzaConfigPayloadToScheduler(payload: String) = {
-    val url = s"http://$apiHost:$apiPort/jobs"
+    val url = s"http://$apiHost:$apiPort/run-job"
+    log.debug(s"Sending job info to $url")
     Http().singleRequest(HttpRequest(HttpMethods.POST, Uri(url), Nil, payload))
   }
 
