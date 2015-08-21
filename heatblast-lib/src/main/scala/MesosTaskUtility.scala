@@ -33,8 +33,13 @@ object MesosTaskUtility {
 
   private[this] def sendSamzaConfigPayloadToScheduler(payload: String) = {
     val url = s"http://$apiHost:$apiPort/run-job"
-    log.debug(s"Sending job info to $url")
-    Http().singleRequest(HttpRequest(HttpMethods.POST, Uri(url), Nil, payload))
+    log.debug(s"Sending job info to $url with payload $payload")
+
+    val fReq = Http().singleRequest(HttpRequest(HttpMethods.POST, Uri(url), Nil, payload))
+
+    fReq.foreach {
+      case resp: HttpResponse => log.debug(s"Response from sending request: $resp")
+    }
   }
 
   private[this] lazy val apiHost = config.getString("heatblast-scheduler.host")
