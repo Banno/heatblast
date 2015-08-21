@@ -16,14 +16,14 @@ trait HeatblastConfig {
   lazy val httpServerPort = config.getInt("heatblast-scheduler.http-server.port")
 
   lazy val publicHttpServerHost = config.getString("heatblast-scheduler.http-server.public-host")
+
+  lazy val mesosConnect = config.getString("mesos.master.connect")
 }
 
 object Main extends App with HttpServer with Logging with HeatblastConfig { self =>
   val frameworkInfo = FrameworkInfo.newBuilder().setUser("").setName("samza-scheduler").build()
 
   val samzaScheduler = new SamzaMesosScheduler with ZookeeperSamzaJobStatePersistence
-
-  val mesosConnect = config.getString("mesos.master.connect")
 
   val driver = new MesosSchedulerDriver(samzaScheduler, frameworkInfo, mesosConnect)
   log.info(s"Running samza mesos scheduler on $mesosConnect")
