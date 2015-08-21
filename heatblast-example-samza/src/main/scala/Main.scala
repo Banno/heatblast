@@ -17,7 +17,7 @@ object Main extends App {
   }
 
   def askedToGetMesosSchedulerConfigs() = args.size > 1 && args(0) == "get-mesos-configs"
-  def askedToRunSamzaContainer() = args.size > 1 && args(0) == "run-container"
+  def askedToRunSamzaContainer() = args.size == 1 && args(0) == "run-container"
 
   def getJobName() = args(1)
 }
