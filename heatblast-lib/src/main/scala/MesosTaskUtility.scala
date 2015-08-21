@@ -7,27 +7,32 @@ import akka.stream.ActorMaterializer
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.Http
 import akka.io.IO
+import com.typesafe.config.ConfigFactory
 
 object MesosTaskUtility {
   import spray.json._
   import DefaultJsonProtocol._
   import HeatblastProtocol._
 
+  private[this] lazy val config = ConfigFactory.load()
+
   def runSamzaContainer() = SamzaContainer.safeMain()
 
-  // todo -- need the framework http endpoint
   def submitSamzaConfigToMesosScheduler(jobName: String, config: Map[String, String]) = {
     val samzaJobConfig = SamzaJobConfig(jobName, config)
-    val frameworkHost = "todo"
     val payload = samzaJobConfig.toJson.toString
-    sendSamzaConfigPayloadToScheduler(frameworkHost, payload)
+    sendSamzaConfigPayloadToScheduler(payload)
   }
 
   private[this] implicit lazy val system = ActorSystem("system")
   private[this] implicit lazy val materializer = ActorMaterializer()
   import system.dispatcher
 
-  private[this] def sendSamzaConfigPayloadToScheduler(frameworkEndpoint: String, payload: String) = {
-    Http().singleRequest(HttpRequest(HttpMethods.POST, Uri(frameworkEndpoint), Nil, payload))
+  private[this] def sendSamzaConfigPayloadToScheduler(payload: String) = {
+    val url = s"http://$apiHost:$apiPort/jobs"
+    Http().singleRequest(HttpRequest(HttpMethods.POST, Uri(url), Nil, payload))
   }
+
+  private[this] lazy val apiHost = config.getString("heatblast-scheduler.host")
+  private[this] lazy val apiPort = config.getString("heatblast-scheduler.port")
 }
