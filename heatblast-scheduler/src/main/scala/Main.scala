@@ -21,7 +21,7 @@ trait HeatblastConfig {
 }
 
 object Main extends App with HttpServer with SamzaMesosScheduler with ZookeeperSamzaJobStatePersistence with Logging with HeatblastConfig { self =>
-  val frameworkInfo = FrameworkInfo.newBuilder().setUser("").setName("samza-scheduler").build()
+  val frameworkInfo = FrameworkInfo.newBuilder().setUser("").setName("samza-scheduler").build() //TODO checkpoint=true, failoverTimeout=something big, frameworkId
 
   // val samzaScheduler = new SamzaMesosScheduler with ZookeeperSamzaJobStatePersistence
 

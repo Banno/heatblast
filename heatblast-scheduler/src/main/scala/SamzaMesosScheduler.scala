@@ -31,6 +31,9 @@ trait SamzaMesosScheduler extends Scheduler with SamzaJobStatePersistence with L
   /** Kinda gross... cache of job name -> docker image mappings. But hey, this is currently demoware... */
   private[this] var dockerImages = Map.empty[String, String]
 
+  private[this] var jobs: Seq[Job] = Nil
+  def runningJobs = jobs
+
   //TODO get these resource reqs from config
   val infoCpus = 1d
   val infoMemory = 100d

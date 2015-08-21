@@ -6,12 +6,17 @@ import akka.stream.ActorMaterializer
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import spray.json.DefaultJsonProtocol
+
+case class Job(name: String)
+
+object JobProtocol extends DefaultJsonProtocol {
+  implicit val jobFormat = jsonFormat1(Job)
+}
 
 trait HttpServer extends SprayJsonSupport with Logging with HeatblastConfig { self: SamzaMesosScheduler =>
-  // def config: Config
-  // def samzaScheduler: SamzaMesosScheduler
-
   import HeatblastProtocol._
+  import JobProtocol._
 
   //could refactor this out into an ActorModule trait if this stuff is also needed elsewhere
   implicit val system = ActorSystem("my-system")
@@ -22,12 +27,16 @@ trait HttpServer extends SprayJsonSupport with Logging with HeatblastConfig { se
     path("hello") {
       get {
         complete {
-          "Say hello to Heatblast"
+          runningJobs.head
         }
       }
     } ~
     path("jobs") {
-      get { complete { "TODO provide a list of all jobs" } } ~
+      get { 
+        complete { 
+          "TODO provide a list of all jobs"
+        } 
+      } ~
       post {
         entity(as[RunSamzaJob]) { command =>
           log.info(command.toString)
