@@ -7,6 +7,9 @@ import scala.collection.JavaConverters._
 import scala.collection.JavaConversions._
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 import java.util.UUID
+import org.apache.samza.config.{Config => SamzaConfig}
+import org.apache.samza.job.{CommandBuilder, ShellCommandBuilder}
+import org.apache.samza.container.{TaskName, TaskNamesToSystemStreamPartitions}
 
 case class Resources(cpus: Double, memory: Double)
 object Resources {
@@ -33,13 +36,20 @@ trait SamzaMesosScheduler extends Scheduler with SamzaJobStatePersistence with L
   def scalarResource(name: String, value: Double): Resource =
     Resource.newBuilder.setName(name).setType(Value.Type.SCALAR).setScalar(Value.Scalar.newBuilder().setValue(value)).build()
 
+  def envVar(name: String, value: String) = Environment.Variable.newBuilder().setName(name).setValue(value).build()
+  implicit def pairToVariable(p: (String, String)) = envVar(p._1, p._2)
+  implicit def mapToEnvironment(map: Map[String, String]): Environment = {
+    val builder = Environment.newBuilder()
+    for ((key, value) <- map) builder.addVariables(key -> value)
+    builder.build()
+  }
+
   def createTaskInfoForComputingJobInfo(command: RunSamzaJob, offer: Offer): TaskInfo = {
     val taskId = s"${command.jobName}-compute-job-info-${UUID.randomUUID.toString}"
 
-    def envVar(name: String, value: String) = Environment.Variable.newBuilder().setName(name).setValue(value).build()
     val environment = Environment.newBuilder()
-      .addVariables(envVar("HEATBLAST_HOST", publicHttpServerHost))
-      .addVariables(envVar("HEATBLAST_PORT", httpServerPort.toString))
+      .addVariables("HEATBLAST_HOST" -> publicHttpServerHost)
+      .addVariables("HEATBLAST_PORT" -> httpServerPort.toString)
       .build()
 
     TaskInfo.newBuilder()
@@ -75,6 +85,39 @@ trait SamzaMesosScheduler extends Scheduler with SamzaJobStatePersistence with L
     } else {
       offers
     }
+  }
+
+  def createTaskInfoForSamzaContainer(
+      jobName: String, 
+      dockerImage: String, 
+      containerId: Int, 
+      config: SamzaConfig, 
+      sspTaskNames: TaskNamesToSystemStreamPartitions,
+      taskNameToChangeLogPartitionMapping: Map[TaskName, Int],
+      offer: Offer, 
+      resources: Resources): TaskInfo = {
+    val taskId = s"$jobName-container-$containerId"
+
+    val commandBuilder = classOf[ShellCommandBuilder].newInstance.asInstanceOf[CommandBuilder]
+      .setConfig(config)
+      .setName(taskId)
+      .setTaskNameToSystemStreamPartitionsMapping(sspTaskNames.getJavaFriendlyType)
+      .setTaskNameToChangeLogPartitionMapping(taskNameToChangeLogPartitionMapping.mapValues(i => i: Integer))
+    val environmentVariables = commandBuilder.buildEnvironment().asScala.toMap //TODO add any other env vars for samza container to this map
+
+    TaskInfo.newBuilder()
+      .setTaskId(TaskID.newBuilder().setValue(taskId).build())
+      .setName(taskId)
+      .setSlaveId(offer.getSlaveId)
+      .addResources(scalarResource("cpus", resources.cpus))
+      .addResources(scalarResource("mem", resources.memory))
+      .setCommand(CommandInfo.newBuilder()
+        .setEnvironment(environmentVariables)
+        .setShell(false)
+        .addAllArguments(Seq("run-container"))
+        .build())
+      .setContainer(ContainerInfo.newBuilder().setType(ContainerInfo.Type.DOCKER).setDocker(ContainerInfo.DockerInfo.newBuilder().setImage(dockerImage).build()).build())
+      .build()
   }
 
   override def registered(driver: SchedulerDriver, frameworkId: FrameworkID, masterInfo: MasterInfo): Unit = {
