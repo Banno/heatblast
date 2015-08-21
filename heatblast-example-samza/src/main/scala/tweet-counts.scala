@@ -5,7 +5,6 @@ import org.apache.samza.task.{StreamTask, MessageCollector, TaskCoordinator, Ini
 import org.apache.samza.storage.kv.KeyValueStore
 import org.apache.samza.config.Config
 import spray.json._
-import DefaultJsonProtocol._
 
 case class Tweet(screen_name: String, text: String) // other interesting fields?
 
