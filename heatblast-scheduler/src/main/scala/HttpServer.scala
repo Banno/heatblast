@@ -7,7 +7,7 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 
-trait HttpServer extends SprayJsonSupport with Logging {
+trait HttpServer extends SprayJsonSupport with Logging with HeatblastConfig {
   def config: Config
   def samzaScheduler: SamzaMesosScheduler
 
@@ -44,11 +44,9 @@ trait HttpServer extends SprayJsonSupport with Logging {
     }
 
   def startHttpServer() = {
-    lazy val host = config.getString("heatblast-scheduler.http-server.host")
-    lazy val port = config.getInt("heatblast-scheduler.http-server.port")
-    log.debug(s"Starting HTTP server on $host:$port...")
-    val bindFuture = Http().bindAndHandle(route, host, port)
-    bindFuture onSuccess { case _ => log.debug(s"Started HTTP server on $host:$port") }
+    log.debug(s"Starting HTTP server on $httpServerHost:$httpServerPort...")
+    val bindFuture = Http().bindAndHandle(route, httpServerHost, httpServerPort)
+    bindFuture onSuccess { case _ => log.debug(s"Started HTTP server on $httpServerHost:$httpServerPort") }
     bindFuture
   }
 }

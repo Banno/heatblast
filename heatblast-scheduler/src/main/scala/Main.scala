@@ -9,14 +9,17 @@ trait Logging {
   lazy val log = LoggerFactory.getLogger(this.getClass)
 }
 
-object Main extends App with HttpServer with Logging { self =>
-  val config = ConfigFactory.load()
+trait HeatblastConfig {
+  lazy val config = ConfigFactory.load()
 
+  lazy val httpServerHost = config.getString("heatblast-scheduler.http-server.host")
+  lazy val httpServerPort = config.getInt("heatblast-scheduler.http-server.port")
+}
+
+object Main extends App with HttpServer with Logging with HeatblastConfig { self =>
   val frameworkInfo = FrameworkInfo.newBuilder().setUser("").setName("samza-scheduler").build()
 
-  val samzaScheduler = new SamzaMesosScheduler with ZookeeperSamzaJobStatePersistence {
-    val config = self.config
-  }
+  val samzaScheduler = new SamzaMesosScheduler with ZookeeperSamzaJobStatePersistence
 
   val mesosConnect = config.getString("mesos.master.connect")
 

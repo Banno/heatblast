@@ -16,7 +16,7 @@ object Resources {
   }
 }
 
-trait SamzaMesosScheduler extends Scheduler with SamzaJobStatePersistence with Logging {
+trait SamzaMesosScheduler extends Scheduler with SamzaJobStatePersistence with Logging with HeatblastConfig {
 
   private[this] val infosToCompute: BlockingQueue[RunSamzaJob] = new LinkedBlockingQueue(1000)
   def computeJobInfo(command: RunSamzaJob): Boolean = infosToCompute.offer(command) //TODO this command queue needs to be part of scheduler's persistent state
@@ -38,8 +38,8 @@ trait SamzaMesosScheduler extends Scheduler with SamzaJobStatePersistence with L
 
     def envVar(name: String, value: String) = Environment.Variable.newBuilder().setName(name).setValue(value).build()
     val environment = Environment.newBuilder()
-      .addVariables(envVar("HEATBLAST_HOST", "TODO"))
-      .addVariables(envVar("HEATBLAST_PORT", "TODO"))
+      .addVariables(envVar("HEATBLAST_HOST", httpServerHost))
+      .addVariables(envVar("HEATBLAST_PORT", httpServerPort.toString))
       .build()
 
     TaskInfo.newBuilder()
