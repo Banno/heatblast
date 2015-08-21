@@ -51,7 +51,9 @@ class CountTweetsByUsernameTask extends StreamTask with InitableTask {
   def process(envelope: IncomingMessageEnvelope, collector: MessageCollector, coordinator: TaskCoordinator): Unit = {
     val user = new String(envelope.getKey.asInstanceOf[Array[Byte]], "UTF-8")
     val count = Option(store.get(user)) getOrElse 0
-    store.put(user, count + 1)
+    val updatedCount = count + 1
+    log.info(s"User $user now has $updatedCount tweets!")
+    store.put(user, updatedCount)
   }
 }
 
