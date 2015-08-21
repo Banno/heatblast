@@ -19,7 +19,7 @@ object ExampleSamzaTaskConfig {
     "systems.kafka.producer.metadata.broker.list" -> "zk://dev.banno.com:2181/kafka",
     "systems.kafka.consumer.zookeeper.connect" -> "dev.banno.com:2181",
 
-    "mesos.docker.image" -> "registry.banno-internal.com/heatblast-example-samza:latest",
+    // "mesos.docker.image" -> "registry.banno-internal.com/heatblast-example-samza:latest",
 
     "task.checkpoint.factory" -> "org.apache.samza.checkpoint.kafka.KafkaCheckpointManagerFactory",
     "task.checkpoint.system" -> "kafka",

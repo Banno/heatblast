@@ -28,6 +28,9 @@ trait SamzaMesosScheduler extends Scheduler with SamzaJobStatePersistence with L
   private[this] val jobsToRun: BlockingQueue[SamzaJobConfig] = new LinkedBlockingQueue(1000)
   def runJob(config: SamzaJobConfig): Boolean = jobsToRun.offer(config) //TODO this queue needs to be part of scheduler's persistent state
 
+  /** Kinda gross... cache of job name -> docker image mappings. But hey, this is currently demoware... */
+  private[this] var dockerImages = Map.empty[String, String]
+
   //TODO get these resource reqs from config
   val infoCpus = 1d
   val infoMemory = 100d
@@ -81,6 +84,7 @@ trait SamzaMesosScheduler extends Scheduler with SamzaJobStatePersistence with L
           log.info(s"Using offer ${offer.getId} to compute info for $command in task $taskInfo.getTaskId")
           driver.launchTasks(Seq(offer.getId), Seq(taskInfo))
           infosToCompute.remove(command) //peek above did not remove the command
+          dockerImages += (command.jobName -> command.dockerImage) //later when we schedule the samza containers for this job, we need to know its docker image, probably should find a better way to do this
           offers.filterNot(_.getId == offer.getId)
         case None => 
           log.info(s"None of the ${offers.size} offers were suitable for computing info for $command")
@@ -147,13 +151,12 @@ trait SamzaMesosScheduler extends Scheduler with SamzaJobStatePersistence with L
     - for now, just run as many containers as possible in each offer until we've scheduled all containers
   */
   def computePlanForRunningJob(job: SamzaJobConfig, offers: Seq[Offer]): Map[Offer, Seq[TaskInfo]] = {
-    val job2: SamzaJobConfig2 = null //TODO remove this after new SamzaJobConfig format has been committed
     val config = new ScalaMapConfig(new MapConfig(job.samzaConfig))
     val containerCount = config.getOption("mesos.executor.count").map(_.toInt) getOrElse 1
     val cpusPerContainer = config.getOption("mesos.executor.cpu.cores").map(_.toDouble) getOrElse 1d
     val memoryPerContainer = config.getOption("mesos.executor.disk.mb").map(_.toDouble) getOrElse 512d
 
-    var containerIdsLeftToSchedule = job2.samzaContainerIdToSSPTaskNames.keys.toSeq
+    var containerIdsLeftToSchedule = job.samzaContainerIdToSSPTaskNames.keys.toSeq
 
     var plan = Map.empty[Offer, Seq[TaskInfo]]
     for (offer <- offers) { //TODO change to while loop that terminates if containerIdsLeftToSchedule.isEmpty
@@ -168,12 +171,12 @@ trait SamzaMesosScheduler extends Scheduler with SamzaJobStatePersistence with L
       containerIdsLeftToSchedule = otherContainerIds
       log.debug(s"Scheduling ${containerIdsInOffer.size} containers ${containerIdsInOffer} on offer ${offer.getId}")
       plan += (offer -> containerIdsInOffer.map(containerId => createTaskInfoForSamzaContainer(
-        job2.jobName, 
-        job2.dockerImage, 
+        job.jobName, 
+        dockerImages(job.jobName), 
         containerId,
         config,
-        job2.samzaContainerIdToSSPTaskNames(containerId),
-        job2.samzaTaskNameToChangeLogPartitionMapping,
+        job.samzaContainerIdToSSPTaskNames(containerId),
+        job.samzaTaskNameToChangeLogPartitionMapping,
         offer,
         Resources(cpusPerContainer, memoryPerContainer))))
     }
