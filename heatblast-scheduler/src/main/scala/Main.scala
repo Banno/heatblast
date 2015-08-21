@@ -14,6 +14,8 @@ trait HeatblastConfig {
 
   lazy val httpServerHost = config.getString("heatblast-scheduler.http-server.host")
   lazy val httpServerPort = config.getInt("heatblast-scheduler.http-server.port")
+
+  lazy val publicHttpServerHost = config.getString("heatblast-scheduler.http-server.public-host")
 }
 
 object Main extends App with HttpServer with Logging with HeatblastConfig { self =>
