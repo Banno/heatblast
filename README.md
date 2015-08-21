@@ -11,3 +11,22 @@ The existing Samza Mesos framework https://github.com/Banno/samza-mesos runs one
 This Samza Mesos framework runs a single Mesos framework for all Samza jobs, somewhat like a Marathon for Samza. It provides a REST/JSON API to submit jobs, query job status, etc and monitors execution of Samza jobs. Each Samza job runs as a set of Mesos tasks, one task per Samza container.
 
 Managed via [waffle.io](https://waffle.io): [![Stories in Ready](https://badge.waffle.io/Banno/heatblast.svg?label=ready&title=Ready)](http://waffle.io/Banno/heatblast)
+
+## Building
+
+```
+sbt clean compile docker
+```
+
+## Running
+
+```
+big up -d marathon kafka
+
+cd heatblast-scheduler/marathon
+./run.sh
+
+#Wait for Heatblast scheduler to run
+
+curl -X POST -H "Content-Type: application/json" -d '{"jobName": "ExampleSamzaTask", "dockerImage": "registry.banno-internal.com/heatblast-example-samza:latest"}' http://dev.banno.com:8181/jobs
+```

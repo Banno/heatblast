@@ -7,9 +7,9 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 
-trait HttpServer extends SprayJsonSupport with Logging with HeatblastConfig {
-  def config: Config
-  def samzaScheduler: SamzaMesosScheduler
+trait HttpServer extends SprayJsonSupport with Logging with HeatblastConfig { self: SamzaMesosScheduler =>
+  // def config: Config
+  // def samzaScheduler: SamzaMesosScheduler
 
   import HeatblastProtocol._
 
@@ -31,14 +31,14 @@ trait HttpServer extends SprayJsonSupport with Logging with HeatblastConfig {
       post {
         entity(as[RunSamzaJob]) { command =>
           log.info(command.toString)
-          samzaScheduler.computeJobInfo(command)
+          computeJobInfo(command)
           //get computed job info from zookeeper
           //run samza container mesos tasks
           complete { "TODO run the samza job..." }
         } ~
         entity(as[SamzaJobConfig]) { config =>
           log.info(s"Received config for job: $config")
-          samzaScheduler.runJob(config)
+          runJob(config)
           complete { "todo run samza container" }
         }
       }

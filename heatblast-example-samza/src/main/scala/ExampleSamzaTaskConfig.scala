@@ -16,8 +16,8 @@ object ExampleSamzaTaskConfig {
     "mesos.scheduler.role" -> "samza",
     "mesos.docker.entrypoint.arguments" -> "container",
 
-    "systems.kafka.producer.metadata.broker.list" -> "zk://dev.banno.com:2181/kafka",
-    "systems.kafka.consumer.zookeeper.connect" -> "dev.banno.com:2181",
+    "systems.kafka.producer.metadata.broker.list" -> "dev.banno.com:9092",
+    "systems.kafka.consumer.zookeeper.connect" -> "dev.banno.com:2181/kafka",
 
     // "mesos.docker.image" -> "registry.banno-internal.com/heatblast-example-samza:latest",
 
@@ -36,6 +36,6 @@ object ExampleSamzaTaskConfig {
     "job.id" -> "1",
     "job.name" -> samzaJobName,
     "task.class" -> "com.banno.heatblast.example.ExampleSamzaTask",
-    "task.inputs" -> "heatblast-example-input"
+    "task.inputs" -> "kafka.heatblast-example-input"
   )
 }
