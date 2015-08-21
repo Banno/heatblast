@@ -47,18 +47,20 @@ class RepartitionTweetsByUsernameTask extends StreamTask {
 class CountTweetsByUsernameTask extends StreamTask with InitableTask {
 
   lazy val storeName = "heatblast.tweet-counts-by-username"
-  var store: KeyValueStore[String, Int] = null
+  var store: KeyValueStore[String, String] = null
+
+  lazy val log = LoggerFactory.getLogger(this.getClass)
 
   def init(config: Config, context: TaskContext): Unit = {
-    store = context.getStore(storeName).asInstanceOf[KeyValueStore[String, Int]]
+    store = context.getStore(storeName).asInstanceOf[KeyValueStore[String, String]]
   }
 
   def process(envelope: IncomingMessageEnvelope, collector: MessageCollector, coordinator: TaskCoordinator): Unit = {
     val user = new String(envelope.getKey.asInstanceOf[Array[Byte]], "UTF-8")
-    val count = Option(store.get(user)) getOrElse 0
-    val updatedCount = count + 1
+    val count = Option(store.get(user)) getOrElse "0"
+    val updatedCount = count.toInt + 1
     log.info(s"User $user now has $updatedCount tweets!")
-    store.put(user, updatedCount)
+    store.put(user, updatedCount.toString)
   }
 }
 
@@ -120,7 +122,7 @@ object TweetJobConfigs {
     "stores.heatblast.tweet-counts-by-username.changelog" -> "kafka.heatblast.tweet-counts-by-username",
     "stores.heatblast.tweet-counts-by-username.factory" -> "org.apache.samza.storage.kv.RocksDbKeyValueStorageEngineFactory",
     "stores.heatblast.tweet-counts-by-username.key.serde" -> "string",
-    "stores.heatblast.tweet-counts-by-username.msg.serde" -> "integer",
+    "stores.heatblast.tweet-counts-by-username.msg.serde" -> "string",
     "stores.heatblast.tweet-counts-by-username.object.cache.size" -> "0",
 
     "metrics.reporters" -> "",
