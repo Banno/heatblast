@@ -20,7 +20,8 @@ object MesosTaskUtility {
 
   def submitSamzaConfigToMesosScheduler(jobName: String, config: Map[String, String]) = {
     val samzaJobConfig = SamzaJobConfig(jobName, config)
-    val payload = samzaJobConfig.toJson.toString
+    // val payload = samzaJobConfig.toJson.toString
+    val payload = "todo"
     sendSamzaConfigPayloadToScheduler(payload)
   }
 
