@@ -5,6 +5,7 @@ import org.apache.samza.task.{StreamTask, MessageCollector, TaskCoordinator, Ini
 import org.apache.samza.storage.kv.KeyValueStore
 import org.apache.samza.config.Config
 import spray.json._
+import org.slf4j.LoggerFactory
 
 case class Tweet(screen_name: String, text: String) // other interesting fields?
 
@@ -18,16 +19,19 @@ object TweetFormat extends DefaultJsonProtocol {
 class RepartitionTweetsByUsernameTask extends StreamTask {
   import TweetFormat._
 
+  lazy val log = LoggerFactory.getLogger(this.getClass)
+
   lazy val outputStream = new SystemStream("kafka", "heatblast.tweets-by-username")
 
   def process(envelope: IncomingMessageEnvelope, collector: MessageCollector, coordinator: TaskCoordinator): Unit = {
-    val msg = envelope.getMessage().asInstanceOf[String]
+    val msg = new String(envelope.getMessage().asInstanceOf[Array[Byte]], "UTF-8")
+    log.debug(msg)
     val js = msg.toJson.asJsObject()
 
     // just look for tweets containing "text" -- ignore other types of messages
     if (js.fields.exists(_._1 == "text")) {
       val tweet = js.convertTo[Tweet]
-      collector.send(new OutgoingMessageEnvelope(outputStream, tweet.screen_name, 1))
+      collector.send(new OutgoingMessageEnvelope(outputStream, tweet.screen_name.getBytes("UTF-8"), 1))
     }
   }
 }
@@ -45,7 +49,7 @@ class CountTweetsByUsernameTask extends StreamTask with InitableTask {
   }
 
   def process(envelope: IncomingMessageEnvelope, collector: MessageCollector, coordinator: TaskCoordinator): Unit = {
-    val user = envelope.getKey.asInstanceOf[String]
+    val user = new String(envelope.getKey.asInstanceOf[Array[Byte]], "UTF-8")
     val count = Option(store.get(user)) getOrElse 0
     store.put(user, count + 1)
   }

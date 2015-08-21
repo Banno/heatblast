@@ -29,4 +29,8 @@ cd heatblast-scheduler/marathon
 #Wait for Heatblast scheduler to run
 
 curl -X POST -H "Content-Type: application/json" -d '{"jobName": "ExampleSamzaTask", "dockerImage": "registry.banno-internal.com/heatblast-example-samza:latest"}' http://dev.banno.com:8181/jobs
+
+curl -X POST -H "Content-Type: application/json" -d '{"jobName": "RepartitionTweetsByUsernameTask", "dockerImage": "registry.banno-internal.com/heatblast-example-samza:latest"}' http://dev.banno.com:8181/jobs
+
+curl -X POST -H "Content-Type: application/json" -d '{"jobName": "CountTweetsByUsernameTask", "dockerImage": "registry.banno-internal.com/heatblast-example-samza:latest"}' http://dev.banno.com:8181/jobs
 ```
