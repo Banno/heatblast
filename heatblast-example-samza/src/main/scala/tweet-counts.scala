@@ -51,8 +51,6 @@ class CountTweetsByUsernameTask extends StreamTask with InitableTask {
 
   lazy val log = LoggerFactory.getLogger(this.getClass)
 
-  lazy val log = LoggerFactory.getLogger(this.getClass)
-
   def init(config: Config, context: TaskContext): Unit = {
     store = context.getStore(storeName).asInstanceOf[KeyValueStore[String, String]]
   }
