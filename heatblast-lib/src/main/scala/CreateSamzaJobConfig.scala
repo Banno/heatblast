@@ -16,7 +16,7 @@ object CreateSamzaJobConfig {
     val changelogPartitionMapping = makeSamzaTaskNameToChangeLogPartitionMapping(config, sspTaskNamesMapping)
     val jobConfig = SamzaJobConfig(jobName,
                                    samzaConfig,
-                                   sspTaskNamesMapping,
+                                   sspTaskNamesMapping.map { case (cId, ssps) => ContainerIdTaskNamesToSystemStreamPartitions(cId, ssps) }.toList,
                                    changelogPartitionMapping)
     log.info(s"Final job config being sent to scheduler: $jobConfig")
     jobConfig

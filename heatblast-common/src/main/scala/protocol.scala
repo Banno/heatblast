@@ -8,10 +8,15 @@ import scala.collection.JavaConverters._
 
 case class RunSamzaJob(jobName: String, dockerImage: String)
 
+case class ContainerIdTaskNamesToSystemStreamPartitions(
+  containerId: Int,
+  taskNamesToSystemStreamPartitions: TaskNamesToSystemStreamPartitions
+)
+
 case class SamzaJobConfig(
   jobName: String,
   samzaConfig: Map[String, String],
-  samzaContainerIdToSSPTaskNames: Map[Int, TaskNamesToSystemStreamPartitions],
+  samzaContainerIdToSSPTaskNames: List[ContainerIdTaskNamesToSystemStreamPartitions],
   samzaTaskNameToChangeLogPartitionMapping: Map[TaskName, Int]
 )
 
@@ -57,6 +62,8 @@ object HeatblastProtocol extends DefaultJsonProtocol {
       case other => deserializationError(s"Problem deserializing $js to a TaskNamesToSystemStreamPartitions")
     }
   }
+
+  implicit val containerIdTaskNamesToSystemStreamPartitionsFormat = jsonFormat2(ContainerIdTaskNamesToSystemStreamPartitions)
 
   implicit val runSamzaJobFormat = jsonFormat2(RunSamzaJob)
   implicit val samzaJobConfigFormat = jsonFormat4(SamzaJobConfig)
