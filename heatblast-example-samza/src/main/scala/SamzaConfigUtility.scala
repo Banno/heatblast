@@ -7,5 +7,7 @@ object SamzaConfigUtility {
   def getSamzaConfig(jobName: String): Option[Map[String, String]] = samzaConfigsByJobName.get(jobName)
 
   private[this] lazy val samzaConfigsByJobName: Map[String, Map[String, String]] =
-    Map(ExampleSamzaTaskConfig.samzaJobName -> ExampleSamzaTaskConfig.map)
+    Map(ExampleSamzaTaskConfig.samzaJobName -> ExampleSamzaTaskConfig.map,
+        TweetJobConfigs.repartitionTweetsByUsernameJobName -> TweetJobConfigs.repartitionTweetsByUsernameConfig,
+        TweetJobConfigs.countTweetsByUsernameJobName -> TweetJobConfigs.countTweetsByUsername)
 }
