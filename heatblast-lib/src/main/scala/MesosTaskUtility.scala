@@ -9,6 +9,7 @@ import akka.http.scaladsl.Http
 import akka.io.IO
 import com.typesafe.config.ConfigFactory
 import org.slf4j.LoggerFactory
+import scala.concurrent.Future
 
 object MesosTaskUtility {
   import spray.json._
@@ -31,15 +32,14 @@ object MesosTaskUtility {
   private[this] implicit lazy val materializer = ActorMaterializer()
   import system.dispatcher
 
-  private[this] def sendSamzaConfigPayloadToScheduler(payload: String) = {
-    val url = s"http://$apiHost:$apiPort/run-job"
+  private[this] def sendSamzaConfigPayloadToScheduler(payload: String): Future[HttpResponse] = {
+    val url = s"http://$apiHost:$apiPort/jobs"
     log.debug(s"Sending job info to $url with payload $payload")
-
     val fReq = Http().singleRequest(HttpRequest(HttpMethods.POST, Uri(url)).withEntity(ContentTypes.`application/json`, payload))
-
     fReq.foreach {
       case resp: HttpResponse => log.debug(s"Response from sending request: $resp")
     }
+    fReq
   }
 
   private[this] lazy val apiHost = config.getString("heatblast-scheduler.host")
