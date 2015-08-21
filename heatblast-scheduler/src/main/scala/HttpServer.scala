@@ -38,6 +38,7 @@ trait HttpServer extends SprayJsonSupport with Logging with HeatblastConfig {
         } ~
         entity(as[SamzaJobConfig]) { config =>
           log.info(s"Received config for job: $config")
+          samzaScheduler.runJob(config)
           complete { "todo run samza container" }
         }
       }

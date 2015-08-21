@@ -5,9 +5,10 @@ import org.apache.mesos.Protos._
 import java.util.{List => JavaList}
 import scala.collection.JavaConverters._
 import scala.collection.JavaConversions._
+import scala.math.{floor, min}
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 import java.util.UUID
-import org.apache.samza.config.{Config => SamzaConfig}
+import org.apache.samza.config.{Config => SamzaConfig, MapConfig, ScalaMapConfig}
 import org.apache.samza.job.{CommandBuilder, ShellCommandBuilder}
 import org.apache.samza.container.{TaskName, TaskNamesToSystemStreamPartitions}
 
@@ -21,8 +22,11 @@ object Resources {
 
 trait SamzaMesosScheduler extends Scheduler with SamzaJobStatePersistence with Logging with HeatblastConfig {
 
-  private[this] val infosToCompute: BlockingQueue[RunSamzaJob] = new LinkedBlockingQueue(1000)
-  def computeJobInfo(command: RunSamzaJob): Boolean = infosToCompute.offer(command) //TODO this command queue needs to be part of scheduler's persistent state
+  private[this] val infosToCompute: BlockingQueue[RunSamzaJob] = new LinkedBlockingQueue(1000) //TODO how does this compare to scala.collection.mutable.SynchronizedQueue?
+  def computeJobInfo(command: RunSamzaJob): Boolean = infosToCompute.offer(command) //TODO this queue needs to be part of scheduler's persistent state
+
+  private[this] val jobsToRun: BlockingQueue[SamzaJobConfig] = new LinkedBlockingQueue(1000)
+  def runJob(config: SamzaJobConfig): Boolean = jobsToRun.offer(config) //TODO this queue needs to be part of scheduler's persistent state
 
   //TODO get these resource reqs from config
   val infoCpus = 1d
@@ -120,6 +124,80 @@ trait SamzaMesosScheduler extends Scheduler with SamzaJobStatePersistence with L
       .build()
   }
 
+  /*
+  - offers:
+    - multiple offers
+    - assume each offer is for a different mesos-agent (valid? basing this on anecdotal evidence...)
+    - each offer contains available resources we can use
+      - cpu
+      - memory
+    - we can launch multiple tasks (i.e. samza containers) for each offer
+  - samza job containers:
+    - samza job can run across multiple samza containers
+    - each samza container is a mesos task
+    - 1 or more containers
+    - # of containers comes from samza job config (specified by human operator)
+  - plan
+    - plan is a Map[Offer, Seq[TaskInfo]]
+    - describes which samza container tasks we want to launch for each offer
+    - need to just make this work for now, not get too fancy
+    - if the offers are not enough for all samza containers at once, then return empty plan (don't plan a subset of containers, and plan rest of containers later)
+    - don't worry about trying to spread containers across mesos-agents, or trying to keep containers on same mesos-agent: just plan them however is easiest (for now)
+    - really don't worry about trying to co-locate containers on mesos-agents that contain the kafka topic partitions
+    - for now, just run as many containers as possible in each offer until we've scheduled all containers
+  */
+  def computePlanForRunningJob(job: SamzaJobConfig, offers: Seq[Offer]): Map[Offer, Seq[TaskInfo]] = {
+    val job2: SamzaJobConfig2 = null //TODO remove this after new SamzaJobConfig format has been committed
+    val config = new ScalaMapConfig(new MapConfig(job.samzaConfig))
+    val containerCount = config.getOption("mesos.executor.count").map(_.toInt) getOrElse 1
+    val cpusPerContainer = config.getOption("mesos.executor.cpu.cores").map(_.toDouble) getOrElse 1d
+    val memoryPerContainer = config.getOption("mesos.executor.disk.mb").map(_.toDouble) getOrElse 512d
+
+    var containerIdsLeftToSchedule = job2.samzaContainerIdToSSPTaskNames.keys.toSeq
+
+    var plan = Map.empty[Offer, Seq[TaskInfo]]
+    for (offer <- offers) { //TODO change to while loop that terminates if containerIdsLeftToSchedule.isEmpty
+      //run as many samza containers as possible in this offer
+      val resources = Resources.fromOffer(offer)
+      val containerCountInOfferByCpus = floor(resources.cpus / cpusPerContainer).toInt
+      val containerCountInOfferByMemory = floor(resources.memory / memoryPerContainer).toInt
+      val countainerCountInOffer = min(containerCountInOfferByCpus, containerCountInOfferByMemory)
+      log.debug(s"Offer ${offer.getId} provides $resources, can run $containerCountInOfferByCpus containers by cpus, $containerCountInOfferByMemory containers by memory")
+
+      val (containerIdsInOffer, otherContainerIds) = containerIdsLeftToSchedule.splitAt(countainerCountInOffer)
+      containerIdsLeftToSchedule = otherContainerIds
+      log.debug(s"Scheduling ${containerIdsInOffer.size} containers ${containerIdsInOffer} on offer ${offer.getId}")
+      plan += (offer -> containerIdsInOffer.map(containerId => createTaskInfoForSamzaContainer(
+        job2.jobName, 
+        job2.dockerImage, 
+        containerId,
+        config,
+        job2.samzaContainerIdToSSPTaskNames(containerId),
+        job2.samzaTaskNameToChangeLogPartitionMapping,
+        offer,
+        Resources(cpusPerContainer, memoryPerContainer))))
+    }
+
+    if (containerIdsLeftToSchedule.isEmpty) plan
+    else Map.empty
+  }
+
+  def useOffersForRunningJobs(driver: SchedulerDriver, offers: Seq[Offer]): Seq[Offer] = {
+    if (!jobsToRun.isEmpty) { //TODO this method needs to try to run all the jobs, not just one
+      val job = jobsToRun.peek
+      val plan = computePlanForRunningJob(job, offers)
+      for ((offer, tasks) <- plan) {
+        log.info(s"Using offer ${offer.getId} to run samza job container tasks ${tasks.map(_.getTaskId)}")
+        driver.launchTasks(Seq(offer.getId), tasks)
+      }
+      if (plan.nonEmpty) jobsToRun.remove(job) //peek above did not remove the job
+      else log.info(s"The ${offers.size} offers were not suitable for running ${job.jobName}")
+      offers.filterNot(plan.keySet.contains)
+    } else {
+      offers
+    }
+  }
+
   override def registered(driver: SchedulerDriver, frameworkId: FrameworkID, masterInfo: MasterInfo): Unit = {
     log.info(s"Registered frameworkdId $frameworkId")
   }
@@ -131,7 +209,8 @@ trait SamzaMesosScheduler extends Scheduler with SamzaJobStatePersistence with L
   override def resourceOffers(driver: SchedulerDriver, joffers: JavaList[Offer]): Unit = {
     val offers = joffers.asScala
     log.info(s"Received ${offers.size} offers")
-    val unusedOffers = useOffersForComputingJobInfo(driver, offers)
+    var unusedOffers = useOffersForComputingJobInfo(driver, offers)
+    unusedOffers = useOffersForRunningJobs(driver, unusedOffers)
     unusedOffers.foreach(o => driver.declineOffer(o.getId))
   }
 
