@@ -2,7 +2,6 @@ package com.banno.heatblast
 
 import spray.json._
 import org.apache.samza.Partition
-import org.apache.samza.util.Util
 import org.apache.samza.container.{TaskName, TaskNamesToSystemStreamPartitions}
 import org.apache.samza.system.SystemStreamPartition
 import scala.collection.JavaConverters._
