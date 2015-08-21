@@ -35,7 +35,7 @@ object MesosTaskUtility {
     val url = s"http://$apiHost:$apiPort/run-job"
     log.debug(s"Sending job info to $url with payload $payload")
 
-    val fReq = Http().singleRequest(HttpRequest(HttpMethods.POST, Uri(url), Nil, payload))
+    val fReq = Http().singleRequest(HttpRequest(HttpMethods.POST, Uri(url)).withEntity(ContentTypes.`application/json`, payload))
 
     fReq.foreach {
       case resp: HttpResponse => log.debug(s"Response from sending request: $resp")
