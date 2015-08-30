@@ -12,6 +12,20 @@ This Samza Mesos framework runs a single Mesos framework for all Samza jobs, som
 
 Managed via [waffle.io](https://waffle.io): [![Stories in Ready](https://badge.waffle.io/Banno/heatblast.svg?label=ready&title=Ready)](http://waffle.io/Banno/heatblast)
 
+## Status
+
+This is a proof-of-concept built during the Mesoscon 2015 Hackathon to see if we could have a generic Mesos framework schedule any Samza job. It worked, and we won the hackathon!
+
+That said, this is definitely not production-ready code. Since we run Samza jobs on Mesos in production, we will continue to improve this scheduler over time.
+
+## Overview
+
+![](docs/diagram.png)
+
+## Example
+
+![](docs/example.png)
+
 ## Building
 
 ```
