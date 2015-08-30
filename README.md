@@ -14,17 +14,25 @@ Managed via [waffle.io](https://waffle.io): [![Stories in Ready](https://badge.w
 
 ## Status
 
-This is a proof-of-concept built during the Mesoscon 2015 Hackathon to see if we could have a generic Mesos framework schedule any Samza job. It worked, and we won the hackathon!
+This is a proof-of-concept built during the Mesoscon 2015 Hackathon to see if we could have a generic Mesos framework schedule any Samza job. It worked, and we won the hackathon! [Watch the 
+live demo video](https://www.youtube.com/watch?v=KES1Ud4MtDE).
 
-That said, this is definitely not production-ready code. Since we run Samza jobs on Mesos in production, we will continue to improve this scheduler over time.
+That said, this is definitely not production-ready code (yet). Since we run Samza jobs on Mesos in production, we will continue to improve this scheduler over time.
 
 ## Overview
 
 ![](docs/diagram.png)
 
+Before a Samza job can be run on Mesos, information about how that job runs needs to be computed up front. This requires the full config, code, and dependent libraries for that job, which a generic 
+scheduler does not have access to. So the approach in Heatblast is to first run a short-lived Mesos task that does have access to these things to compute this job info and pass it back to the 
+scheduler. Then, the scheduler can run the Samza job as a set of Mesos tasks, once per [Samza container](http://samza.apache.org/learn/documentation/0.9/container/samza-container.html).
+
 ## Example
 
 ![](docs/example.png)
+
+The example is a streaming map-reduce system that processes the Twitter Streaming API to compute the count of tweets per username. This is performed by two separate Samza jobs, with each job 
+running across three Samza containers (i.e. Mesos tasks).
 
 ## Building
 
