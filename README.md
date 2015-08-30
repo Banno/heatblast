@@ -25,7 +25,7 @@ That said, this is definitely not production-ready code (yet). Since we run Samz
 
 Before a Samza job can be run on Mesos, information about how that job runs needs to be computed up front. This requires the full config, code, and dependent libraries for that job, which a generic 
 scheduler does not have access to. So the approach in Heatblast is to first run a short-lived Mesos task that does have access to these things to compute this job info and pass it back to the 
-scheduler. Then, the scheduler can run the Samza job as a set of Mesos tasks, once per [Samza container](http://samza.apache.org/learn/documentation/0.9/container/samza-container.html).
+scheduler. Then, the scheduler can run the Samza job as a set of Mesos tasks, one per [Samza container](http://samza.apache.org/learn/documentation/0.9/container/samza-container.html).
 
 ## Example
 
