@@ -69,7 +69,7 @@ object TweetJobConfigs {
 
   lazy val repartitionTweetsByUsernameConfig = Map(
     "mesos.master.connect" -> "zk://dev.banno.com:2181/mesos",
-    "mesos.executor.count" -> "1",
+    "mesos.executor.count" -> "3",
     "mesos.executor.cpu.cores" -> "0.1",
     "mesos.executor.disk.mb" -> "550",
     "mesos.scheduler.role" -> "samza",
@@ -100,7 +100,7 @@ object TweetJobConfigs {
 
   lazy val countTweetsByUsername = Map(
     "mesos.master.connect" -> "zk://dev.banno.com:2181/mesos",
-    "mesos.executor.count" -> "1",
+    "mesos.executor.count" -> "3",
     "mesos.executor.cpu.cores" -> "0.1",
     "mesos.executor.disk.mb" -> "550",
     "mesos.scheduler.role" -> "samza",
